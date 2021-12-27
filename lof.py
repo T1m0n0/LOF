@@ -76,7 +76,7 @@ class LOF:
         info = self.getInfo(id)
         if len(info):
             md = self.md(info)
-        self.message(self.apiKey, "LOF-溢价: " + datetime.now(tz=pytz.timezone("Asia/Shanghai")).strftime("%m-%d %H:%M"), md)
+            self.message(self.apiKey, "LOF-溢价: " + datetime.now(tz=pytz.timezone("Asia/Shanghai")).strftime("%m-%d %H:%M"), md)
 
 
 if __name__ == "__main__":
