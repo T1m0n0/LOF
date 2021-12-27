@@ -14,7 +14,7 @@ class LOF:
         if "LOF" and "content" not in list(self.cp.sections()):
             raise Exception("Please create config.cfg first")
         self.content = self.cp._sections['content']
-        self.LOFList = json.loads(self.cp.get('LOF','LOFList'))
+        self.LOFList = json.loads(self.cp.get('LOF', 'LOFList'))
         self.LOFList.sort()
         self.disLimit = self.cp.getfloat('LOF', 'disLimit')
         self.preLimit = self.cp.getfloat('LOF', 'preLimit')
@@ -23,18 +23,30 @@ class LOF:
         self.apiKey = self.cp.get('LOF', 'apiKey')
 
         self.session = requests.Session()
-        header = {"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.80 Safari/537.36",}
+        header = {
+            "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/71.0.3578.80 Safari/537.36", }
         self.session.headers.update(header)
         self.urlBase = "https://www.jisilu.cn/data/lof/detail/"
         self.urlLOF = "https://www.jisilu.cn/data/lof/stock_lof_list/?___jsl=LST___t="
+        self.urlIndexLOF = "https://www.jisilu.cn/data/lof/index_lof_list/?___jsl=LST___t="
 
     def getInfo(self, id):
-        r = self.session.get(self.urlLOF + str(int(time.time())*1000))
-        if r.status_code == 200:
-            r = r.json()
+        r1 = self.session.get(self.urlLOF + str(int(time.time()) * 1000))
+        if r1.status_code == 200:
+            res1 = r1.json()
         else:
             return
-        rows = [row["cell"] for row in r["rows"] if int(row["id"]) in self.LOFList]
+
+        r2 = self.session.get(self.urlIndexLOF + str(int(time.time()) * 1000))
+        if r2.status_code == 200:
+            res2 = r2.json()
+            print(res2)
+        else:
+            return
+        rows1 = [row["cell"] for row in res1["rows"] if int(row["id"]) in self.LOFList]
+        rows2 = [row["cell"] for row in res2["rows"] if int(row["id"]) in self.LOFList]
+        rows = rows1 + rows2
+
 
         res = []
         for row in rows:
@@ -42,7 +54,8 @@ class LOF:
             if discount_rt >= self.disLimit or discount_rt <= self.preLimit:
                 s = {}
                 for key, value in self.content.items():
-                    s[key] = row[value] if value != "fund_id" else "".join(["[", row[value], "](", self.urlBase, row[value], ")"])
+                    s[key] = row[value] if value != "fund_id" else "".join(
+                        ["[", row[value], "](", self.urlBase, row[value], ")"])
                 res.append(s)
         return res
 
@@ -63,7 +76,7 @@ class LOF:
         info = self.getInfo(id)
         if len(info):
             md = self.md(info)
-            self.message(self.apiKey, "LOF-溢价: " + datetime.now(tz=pytz.timezone("Asia/Shanghai")).strftime("%m-%d %H:%M"), md)
+        self.message(self.apiKey, "LOF-溢价: " + datetime.now(tz=pytz.timezone("Asia/Shanghai")).strftime("%m-%d %H:%M"), md)
 
 
 if __name__ == "__main__":
